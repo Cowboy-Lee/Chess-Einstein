@@ -152,16 +152,12 @@ def trainNetwork(s, readout, sess):
     D_ = deque()
 
     # get the first state by doing nothing and preprocess the image to 80x80x4
-    s_eval = game_state_eval.InitializeGame(random.randint(0, 719), random.randint(0, 719), PLAYER_RED)
+    s_eval,_,_ = game_state_eval.InitializeGame(PLAYER_RED)
     terminal_eval = False
-    s_demo = game_state_demo.InitializeGame(random.randint(0, 719), random.randint(0, 719), PLAYER_RED)
+    s_demo,_,_ = game_state_demo.InitializeGame(PLAYER_RED)
     terminal_demo = False
-    '''从720种开局中选择一种'''
-    red_start = 18 # 可能是最好的开局
-    red_start = random.randint(0,719)
-    blue_start = random.randint(0,719)
     ''' s_t为13层结构的状态 '''
-    s_t = game_state.InitializeGame(red_start, blue_start, PLAYER_RED)
+    s_t, red_start, blue_start = game_state.InitializeGame(PLAYER_RED)
     current_player = PLAYER_RED
 
     # saving and loading networks
@@ -228,11 +224,8 @@ def trainNetwork(s, readout, sess):
 
         # 变更棋盘状态信息和参数
         if terminal:
-            red_start = 18  # 可能是最好的开局
-            red_start = random.randint(0, 719)
-            blue_start = random.randint(0, 719)
             ''' 要记得 s_t 里的最后两层应该包含下一次骰子值和下一次的玩家信息 '''
-            s_t = game_state.InitializeGame(red_start, blue_start, PLAYER_RED)
+            s_t, red_start, blue_start = game_state.InitializeGame(PLAYER_RED)
             current_player = PLAYER_RED
         else:
             current_player = -current_player
@@ -324,7 +317,7 @@ def trainNetwork(s, readout, sess):
             if len(Q_game_results)>1000:
                 winner = Q_game_results.popleft()
                 win_red_count-=winner
-            s_eval = game_state_eval.InitializeGame(random.randint(0, 719), random.randint(0, 719), PLAYER_RED)
+            s_eval,_,_ = game_state_eval.InitializeGame(PLAYER_RED)
             terminal_eval = False
         else:
             a_eval = np.zeros([ACTIONS])
@@ -341,7 +334,7 @@ def trainNetwork(s, readout, sess):
             '''每1.5秒演示一次'''
             lastEvalTime = now
             if terminal_demo:
-                s_demo = game_state_demo.InitializeGame(random.randint(0, 719), random.randint(0, 719), random.randint(0, 1) * 2 - 1)
+                s_demo,_,_ = game_state_demo.InitializeGame(random.randint(0, 1) * 2 - 1)
                 terminal_demo = False
             else:
                 a_demo = np.zeros([ACTIONS])

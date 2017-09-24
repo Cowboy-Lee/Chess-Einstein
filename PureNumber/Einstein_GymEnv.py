@@ -6,6 +6,12 @@ from os import path
 
 from PureNumber.Einstein_PureNumber_InverseStep import GameState_InverseStep as game
 
+PLAYER_RED = 1
+PLAYER_BLUE = -1
+HORIZONTAL = 0
+VERTICAL = 1
+ACTIONS = 6
+
 class EinsteinEnv(gym.Env):
     metadata = {
         'render.modes' : ['human', 'rgb_array'],
@@ -17,71 +23,29 @@ class EinsteinEnv(gym.Env):
         return EinsteinEnv()
 
     def __init__(self):
-        self.evn = game()
+        self.state = game()
 
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def _step(self,u):
-        th, thdot = self.state # th := theta
-
-        g = 10.
-        m = 1.
-        l = 1.
-        dt = self.dt
-
-        u = np.clip(u, -self.max_torque, self.max_torque)[0]
-        self.last_u = u # for rendering
-        costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
-
-        newthdot = thdot + (-3*g/(2*l) * np.sin(th + np.pi) + 3./(m*l**2)*u) * dt
-        newth = th + newthdot*dt
-        newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
-
-        self.state = np.array([newth, newthdot])
-        return self._get_obs(), -costs, False, {}
+    def _step(self, act):
+        # 根据行为概率向量act，选择可行行为中的最大者，并将其设置为唯一激活
+        action_index = self.state.GetActionIndex(reference_readout=act)
+        a_t = np.zeros([ACTIONS])
+        a_t[action_index] = 1
+        s_t1, r_t, terminal = self.state.step_in_mind(a_t)
+        if terminal:
+            ''' 要记得 s_t 里的最后两层应该包含下一次骰子值和下一次的玩家信息 '''
+            s_t = self._reset();
+        else:
+            s_t = s_t1
+        return s_t, r_t, terminal, {}
 
     def _reset(self):
-        high = np.array([np.pi, 1])
-        self.state = self.np_random.uniform(low=-high, high=high)
-        self.last_u = None
-        return self._get_obs()
-
-    def _get_obs(self):
-        theta, thetadot = self.state
-        return np.array([np.cos(theta), np.sin(theta), thetadot])
+        self.obs, _, _ = self.state.InitializeGame(PLAYER_RED, self.np_random)
+        return self.obs
 
     def _render(self, mode='human', close=False):
-        if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
+        pass
 
-        if self.viewer is None:
-            from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(500,500)
-            self.viewer.set_bounds(-2.2,2.2,-2.2,2.2)
-            rod = rendering.make_capsule(1, .2)
-            rod.set_color(.8, .3, .3)
-            self.pole_transform = rendering.Transform()
-            rod.add_attr(self.pole_transform)
-            self.viewer.add_geom(rod)
-            axle = rendering.make_circle(.05)
-            axle.set_color(0,0,0)
-            self.viewer.add_geom(axle)
-            fname = path.join(path.dirname(__file__), "assets/clockwise.png")
-            self.img = rendering.Image(fname, 1., 1.)
-            self.imgtrans = rendering.Transform()
-            self.img.add_attr(self.imgtrans)
-
-        self.viewer.add_onetime(self.img)
-        self.pole_transform.set_rotation(self.state[0] + np.pi/2)
-        if self.last_u:
-            self.imgtrans.scale = (-self.last_u/2, np.abs(self.last_u)/2)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-
-def angle_normalize(x):
-    return (((x+np.pi) % (2*np.pi)) - np.pi)

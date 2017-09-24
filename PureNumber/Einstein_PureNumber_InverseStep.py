@@ -5,7 +5,7 @@
 说明：每走一步都要翻转数据，使得红蓝双方可以使用同一个AI
 '''
 
-import random
+
 import numpy as np
 import pygame
 
@@ -41,29 +41,9 @@ def NextPermutation(aa, index):
     return b
 
 '''生成1~6的随机数'''
-def RollADice():
-    return random.randint(1, 6)
+def RollADice(rnd):
+    return rnd.randint(1,6)
 
-'''得到一个随机的25个元素的向量'''
-def mat_gen():
-    digit1 = random.randint(-6, -1)
-    digit2 = random.randint(1, 6)
-    arr = [0 for i in range(23)]
-    arr.extend([i for i in range(-6, 0) if i != digit1])
-    arr.extend([i for i in range(1, 7) if i != digit2])
-
-    def shuffle(lst):
-        for i in range(len(lst) - 1, 0, -1):
-            p = random.randint(0, i)
-            lst[i], lst[p] = lst[p], lst[i]
-        return lst
-
-    arr = shuffle(arr)[0:23]
-    arr.append(digit1)
-    arr.append(digit2)
-    result_arr = shuffle(arr)
-
-    return result_arr
 
 # 游戏状态类
 # 用于管理棋子、规则
@@ -90,11 +70,16 @@ class GameState_InverseStep:
             #         fle.write("%d\t%d\t%d\t%d\t%d\t%d\n" % (a,b,c,d,e,f))
 
     '''初始化游戏'''
-    def InitializeGame(self, red_start, blue_start, start_player):
+    def InitializeGame(self, start_player, random):
+        '''从720种开局中选择一种'''
+        red_start = 18  # 可能是最好的开局
+        red_start = random.randint(0, 719)
+        blue_start = random.randint(0, 719)
+        # 赋值
         self.gameboard  = np.zeros((5, 5), dtype="int")
         self.redHelper  = np.zeros((7, 2), dtype="int")
         self.blueHelper = np.zeros((7, 2), dtype="int")
-        self.dice = RollADice()
+        self.dice = RollADice(random)
         self.player = start_player
         for i in range(6):
             '''  红  '''
@@ -114,7 +99,7 @@ class GameState_InverseStep:
 
         self.__MakeAvailableInputData()
         self.__MakeAllStates()
-        return self.FromGameboardToData()
+        return self.FromGameboardToData(), red_start, blue_start
 
     '''获取合法的输入'''
     def AvailableInputFromGameboard(self):
