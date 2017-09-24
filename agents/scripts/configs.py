@@ -23,6 +23,8 @@ from __future__ import print_function
 from agents import ppo
 from agents.scripts import networks
 
+from PureNumber.Einstein_GymEnv import EinsteinEnv
+
 
 def default():
   """Default configuration for PPO."""
@@ -57,6 +59,14 @@ def default():
   kl_init_penalty = 1
   return locals()
 
+
+def einstein():
+    locals().update(default())
+    #Environment
+    env = EinsteinEnv.create_instance
+    max_length = 2000
+    steps = 1e7  # 10M
+    return locals()
 
 def pendulum():
   """Configuration for the pendulum classic control task."""

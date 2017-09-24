@@ -14,11 +14,11 @@ PLAYER_BLUE = -1
 HORIZONTAL = 0
 VERTICAL = 1
 
-startLayout = np.ndarray((720,6), dtype="int")
 redLayoutOrder  = [[0,0], [1,0], [0,1], [2,0], [1,1], [0,2]]
 blueLayoutOrder = [[4,4], [3,4], [4,3], [2,4], [3,3], [4,2]]
-def NextPermutation(a):
-    b = a
+def NextPermutation(aa, index):
+    a = aa[index]
+    b = aa[index+1]
     idx = 99
     ''' 爬山，找到掉下来的地方 '''
     for i in range(5, 0, -1):
@@ -68,6 +68,8 @@ def mat_gen():
 # 游戏状态类
 # 用于管理棋子、规则
 class GameState_InverseStep:
+    __startLayout = np.ndarray((720, 6), dtype="int")
+    __startLayoutFinished = False
 
     def __init__(self, draw=False):
         self.gameboard = np.zeros((5,5), dtype="int")
@@ -77,13 +79,15 @@ class GameState_InverseStep:
             screen_size = (400, 500)
             self.screen = pygame.display.set_mode(screen_size)
             pygame.display.set_caption('Einstein')
-        startLayout[0] = [1, 2, 3, 4, 5, 6]
-        for i in range(1, 720):
-            startLayout[i] = NextPermutation(startLayout[i-1])
-        # import os
-        # with open(os.path.join('Checkpoints_it5/startLayout.txt'), 'w') as fle:
-        #     for (a,b,c,d,e,f) in startLayout:
-        #         fle.write("%d\t%d\t%d\t%d\t%d\t%d\n" % (a,b,c,d,e,f))
+        if self.__class__.__startLayoutFinished==False:
+            self.__class__.__startLayout[0] = [1, 2, 3, 4, 5, 6]
+            for i in range(1, 720):
+                NextPermutation(self.__class__.__startLayout[i-1])
+            self.__class__.__startLayoutFinished = True
+            # import os
+            # with open(os.path.join('Checkpoints_it5/startLayout.txt'), 'w') as fle:
+            #     for (a,b,c,d,e,f) in self.__class__.__startLayout:
+            #         fle.write("%d\t%d\t%d\t%d\t%d\t%d\n" % (a,b,c,d,e,f))
 
     '''初始化游戏'''
     def InitializeGame(self, red_start, blue_start, start_player):
@@ -94,14 +98,14 @@ class GameState_InverseStep:
         self.player = start_player
         for i in range(6):
             '''  红  '''
-            v = startLayout[red_start][i]   #v=[1~6]
+            v = self.__class__.__startLayout[red_start][i]   #v=[1~6]
             row = redLayoutOrder[i][0]      #row=[0~4]
             col = redLayoutOrder[i][1]      #col=[0~4]
             self.gameboard[row, col]  = v
             self.redHelper[v, 0] = row
             self.redHelper[v, 1] = col
             '''  蓝  '''
-            v = startLayout[blue_start][i]   #v=[1~6]
+            v = self.__class__.__startLayout[blue_start][i]   #v=[1~6]
             row = blueLayoutOrder[i][0]
             col = blueLayoutOrder[i][1]
             self.gameboard[row, col]  = -v   # 蓝方的子为负数

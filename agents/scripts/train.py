@@ -141,7 +141,7 @@ def train(config, env_processes):
 
 def main(_):
   FLAGS.logdir = '../../Log'
-  FLAGS.config = 'pendulum'
+  FLAGS.config = 'einstein'
   FLAGS.env_processes = False
 
   """Create or load configuration and launch the trainer."""
