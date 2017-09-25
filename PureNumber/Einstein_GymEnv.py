@@ -27,6 +27,7 @@ class EinsteinEnv(gym.Env):
         self.__ShouldDraw=draw
         self.game = game(draw=self.__ShouldDraw)
         self.action_space = spaces.Box(0, 1, shape=(6,))
+        self.observation_space = spaces.Box(-7, 7, shape=(5,5,13))
 
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -46,8 +47,10 @@ class EinsteinEnv(gym.Env):
         return s_t, r_t, terminal, {}
 
     def _reset(self):
-        self.obs, _, _ = self.game.InitializeGame(PLAYER_RED, self.np_random)
-        return self.obs
+        obs, _, _ = self.game.InitializeGame(PLAYER_RED, self.np_random)
+        # TODO: change obs to observation_space
+        self.observation_space = obs
+        return self.observation_space
 
     def _render(self, mode='human', close=False):
         if self.__ShouldDraw:
