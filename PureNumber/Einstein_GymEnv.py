@@ -17,13 +17,16 @@ class EinsteinEnv(gym.Env):
         'render.modes' : ['human', 'rgb_array'],
         'video.frames_per_second' : 30
     }
+    __ShouldDraw = False
 
     @staticmethod
     def create_instance():
         return EinsteinEnv()
 
-    def __init__(self):
-        self.state = game()
+    def __init__(self, draw=False):
+        self.__ShouldDraw=draw
+        self.game = game(draw=self.__ShouldDraw)
+        self.action_space = spaces.Box(0, 1, shape=(6,))
 
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -31,10 +34,10 @@ class EinsteinEnv(gym.Env):
 
     def _step(self, act):
         # 根据行为概率向量act，选择可行行为中的最大者，并将其设置为唯一激活
-        action_index = self.state.GetActionIndex(reference_readout=act)
+        action_index = self.game.GetActionIndex(reference_readout=act)
         a_t = np.zeros([ACTIONS])
         a_t[action_index] = 1
-        s_t1, r_t, terminal = self.state.step_in_mind(a_t)
+        s_t1, r_t, terminal = self.game.step_in_mind(a_t)
         if terminal:
             ''' 要记得 s_t 里的最后两层应该包含下一次骰子值和下一次的玩家信息 '''
             s_t = self._reset();
@@ -43,9 +46,13 @@ class EinsteinEnv(gym.Env):
         return s_t, r_t, terminal, {}
 
     def _reset(self):
-        self.obs, _, _ = self.state.InitializeGame(PLAYER_RED, self.np_random)
+        self.obs, _, _ = self.game.InitializeGame(PLAYER_RED, self.np_random)
         return self.obs
 
     def _render(self, mode='human', close=False):
-        pass
+        if self.__ShouldDraw:
+            self.game.DrawGame()
+            pass
+        else:
+            pass
 
