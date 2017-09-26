@@ -7,7 +7,8 @@ import shlex
 
 import offshoot
 
-from serpent.utilities import clear_terminal, display_serpent_logo
+from serpent.utilities import *
+# from serpent.utilities import clear_terminal, display_serpent_logo
 
 # Add the current working directory to sys.path to discover user plugins!
 sys.path.insert(0, os.getcwd())
@@ -48,11 +49,11 @@ def execute():
 
 
 def executable_help():
-    print(f"\nSerpent.AI v{VERSION}")
+    print("\nSerpent.AI v%s" % VERSION)
     print("Available Commands:\n")
 
     for command, description in command_description_mapping.items():
-        print(f"{command.rjust(16)}: {description}")
+        print("%s: %s" % (command.rjust(16), description))
 
     print("")
 
@@ -171,11 +172,11 @@ def grab_frames(width, height, x_offset, y_offset):
 
 
 def activate(plugin_name):
-    subprocess.call(shlex.split(f"offshoot install {plugin_name}"))
+    subprocess.call(shlex.split("offshoot install %s" % plugin_name))
 
 
 def deactivate(plugin_name):
-    subprocess.call(shlex.split(f"offshoot uninstall {plugin_name}"))
+    subprocess.call(shlex.split("offshoot uninstall %s" % plugin_name))
 
 
 def plugins():
@@ -204,23 +205,23 @@ def plugins():
 
 
 def launch(game_name):
-    game_class_name = f"Serpent{game_name}Game"
+    game_class_name = "Serpent%sGame" % game_name
 
     game = game_class_mapping.get(game_class_name)
 
     if game is None:
-        raise Exception(f"Game '{game_name}' wasn't found. Make sure the plugin is installed.")
+        raise Exception("Game '%s' wasn't found. Make sure the plugin is installed."%game_name)
 
     game().launch()
 
 
 def play(game_name, game_agent_name, frame_handler=None):
-    game_class_name = f"Serpent{game_name}Game"
+    game_class_name = "Serpent%sGame"%game_name
 
     game_class = game_class_mapping.get(game_class_name)
 
     if game_class is None:
-        raise Exception(f"Game '{game_name}' wasn't found. Make sure the plugin is installed.")
+        raise Exception("Game '%s' wasn't found. Make sure the plugin is installed."%game_name)
 
     game = game_class()
     game.launch(dry_run=True)
@@ -228,7 +229,7 @@ def play(game_name, game_agent_name, frame_handler=None):
     game_agent_class = game_agent_class_mapping.get(game_agent_name)
 
     if game_agent_class is None:
-        raise Exception(f"Game Agent '{game_agent_name}' wasn't found. Make sure the plugin is installed.")
+        raise Exception("Game Agent '%s' wasn't found. Make sure the plugin is installed."%game_agent_name)
 
     game.play(game_agent_class_name=game_agent_name, frame_handler=frame_handler)
 
@@ -239,7 +240,7 @@ def generate(plugin_type):
     elif plugin_type == "game_agent":
         generate_game_agent_plugin()
     else:
-        raise Exception(f"'{plugin_type}' is not a valid plugin type...")
+        raise Exception("'%s' is not a valid plugin type..."%plugin_type)
 
 
 def train(training_type, *args):
@@ -248,12 +249,12 @@ def train(training_type, *args):
 
 
 def capture(capture_type, game_name, interval=1, extra=None):
-    game_class_name = f"Serpent{game_name}Game"
+    game_class_name = "Serpent%sGame"%game_name
 
     game_class = game_class_mapping.get(game_class_name)
 
     if game_class is None:
-        raise Exception(f"Game '{game_name}' wasn't found. Make sure the plugin is installed.")
+        raise Exception("Game '%s' wasn't found. Make sure the plugin is installed."%game_name)
 
     game = game_class()
 
@@ -291,7 +292,7 @@ def generate_game_plugin():
 
     prepare_game_plugin(game_name, game_platform)
 
-    subprocess.call(shlex.split(f"serpent activate Serpent{game_name}GamePlugin"))
+    subprocess.call(shlex.split("serpent activate Serpent%sGamePlugin"%game_name))
 
 
 def generate_game_agent_plugin():
@@ -306,11 +307,11 @@ def generate_game_agent_plugin():
 
     prepare_game_agent_plugin(game_agent_name)
 
-    subprocess.call(shlex.split(f"serpent activate Serpent{game_agent_name}GameAgentPlugin"))
+    subprocess.call(shlex.split("serpent activate Serpent%sGameAgentPlugin"%game_agent_name))
 
 
 def prepare_game_plugin(game_name, game_platform):
-    plugin_destination_path = f"{offshoot.config['file_paths']['plugins']}/Serpent{game_name}GamePlugin".replace("/", os.sep)
+    plugin_destination_path = ("%s/Serpent%sGamePlugin"%(offshoot.config['file_paths']['plugins'], game_name)).replace("/", os.sep)
 
     shutil.copytree(
         os.path.join(os.path.dirname(__file__), "templates/SerpentGamePlugin".replace("/", os.sep)),
@@ -318,23 +319,25 @@ def prepare_game_plugin(game_name, game_platform):
     )
 
     # Plugin Definition
-    with open(f"{plugin_destination_path}/plugin.py".replace("/", os.sep), "r") as f:
+    with open((plugin_destination_path + "/plugin.py").replace("/", os.sep), "r") as f:
         contents = f.read()
 
-    contents = contents.replace("SerpentGamePlugin", f"Serpent{game_name}GamePlugin")
-    contents = contents.replace("serpent_game.py", f"serpent_{game_name}_game.py")
+    contents = contents.replace("SerpentGamePlugin", "Serpent%sGamePlugin"%game_name)
+    contents = contents.replace("serpent_game.py", "serpent_%s_game.py"%game_name)
 
-    with open(f"{plugin_destination_path}/plugin.py".replace("/", os.sep), "w") as f:
+    with open((plugin_destination_path+"/plugin.py").replace("/", os.sep), "w") as f:
         f.write(contents)
 
-    shutil.move(f"{plugin_destination_path}/files/serpent_game.py".replace("/", os.sep), f"{plugin_destination_path}/files/serpent_{game_name}_game.py".replace("/", os.sep))
+    SERPENT_GAME_FILE_NAME = (plugin_destination_path+"/files/serpent_game.py").replace("/", os.sep)
+    SERPENT_the_GAME_FILE_NAME = ("%s/files/serpent_%s_game.py"%(plugin_destination_path,game_name)).replace("/", os.sep)
+    shutil.move(SERPENT_GAME_FILE_NAME, SERPENT_the_GAME_FILE_NAME)
 
     # Game
-    with open(f"{plugin_destination_path}/files/serpent_{game_name}_game.py".replace("/", os.sep), "r") as f:
+    with open(SERPENT_the_GAME_FILE_NAME, "r") as f:
         contents = f.read()
 
-    contents = contents.replace("SerpentGame", f"Serpent{game_name}Game")
-    contents = contents.replace("MyGameAPI", f"{game_name}API")
+    contents = contents.replace("SerpentGame", "Serpent%sGame"%game_name)
+    contents = contents.replace("MyGameAPI", "%sAPI"%game_name)
 
     if game_platform == "steam":
         contents = contents.replace("PLATFORM", "steam")
@@ -344,44 +347,45 @@ def prepare_game_plugin(game_name, game_platform):
         contents = contents.replace('kwargs["app_id"] = "APP_ID"', "")
         contents = contents.replace('kwargs["app_args"] = "APP_ARGS"', "")
 
-    with open(f"{plugin_destination_path}/files/serpent_{game_name}_game.py".replace("/", os.sep), "w") as f:
+    with open(SERPENT_the_GAME_FILE_NAME, "w") as f:
         f.write(contents)
 
     # Game API
-    with open(f"{plugin_destination_path}/files/api/api.py".replace("/", os.sep), "r") as f:
+    SERPENT_API_FILE_NAME = (plugin_destination_path+"/files/api/api.py").replace("/", os.sep)
+    with open(SERPENT_API_FILE_NAME, "r") as f:
         contents = f.read()
 
-    contents = contents.replace("MyGameAPI", f"{game_name}API")
+    contents = contents.replace("MyGameAPI", "%sAPI"%game_name)
 
-    with open(f"{plugin_destination_path}/files/api/api.py".replace("/", os.sep), "w") as f:
+    with open(SERPENT_API_FILE_NAME, "w") as f:
         f.write(contents)
 
 
 def prepare_game_agent_plugin(game_agent_name):
-    plugin_destination_path = f"{offshoot.config['file_paths']['plugins']}/Serpent{game_agent_name}GameAgentPlugin".replace("/", os.sep)
+    plugin_destination_path = ("%s/Serpent%sGameAgentPlugin"%(offshoot.config['file_paths']['plugins'],game_agent_name)).replace("/", os.sep)
 
     shutil.copytree(
         os.path.join(os.path.dirname(__file__), "templates/SerpentGameAgentPlugin".replace("/", os.sep)),
         plugin_destination_path
     )
 
-    with open(f"{plugin_destination_path}/plugin.py", "r") as f:
+    with open(plugin_destination_path+"/plugin.py", "r") as f:
         contents = f.read()
 
-    contents = contents.replace("SerpentGameAgentPlugin", f"Serpent{game_agent_name}GameAgentPlugin")
-    contents = contents.replace("serpent_game_agent.py", f"serpent_{game_agent_name}_game_agent.py")
+    contents = contents.replace("SerpentGameAgentPlugin", "Serpent%sGameAgentPlugin"%game_agent_name)
+    contents = contents.replace("serpent_game_agent.py", "serpent_%s_game_agent.py"%game_agent_name)
 
-    with open(f"{plugin_destination_path}/plugin.py", "w") as f:
+    with open(plugin_destination_path+"/plugin.py", "w") as f:
         f.write(contents)
 
-    shutil.move(f"{plugin_destination_path}/files/serpent_game_agent.py", f"{plugin_destination_path}/files/serpent_{game_agent_name}_game_agent.py")
+    shutil.move(plugin_destination_path+"/files/serpent_game_agent.py", plugin_destination_path+"/files/serpent_%s_game_agent.py"%game_agent_name)
 
-    with open(f"{plugin_destination_path}/files/serpent_{game_agent_name}_game_agent.py", "r") as f:
+    with open(plugin_destination_path+"/files/serpent_%s_game_agent.py"%game_agent_name, "r") as f:
         contents = f.read()
 
-    contents = contents.replace("SerpentGameAgent", f"Serpent{game_agent_name}GameAgent")
+    contents = contents.replace("SerpentGameAgent", "Serpent%sGameAgent"%game_agent_name)
 
-    with open(f"{plugin_destination_path}/files/serpent_{game_agent_name}_game_agent.py", "w") as f:
+    with open(plugin_destination_path+"/files/serpent_%s_game_agent.py"%game_agent_name, "w") as f:
         f.write(contents)
 
 
