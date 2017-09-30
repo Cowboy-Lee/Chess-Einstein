@@ -345,8 +345,63 @@ def trainNetwork(s, readout, sess):
                     a_demo[game_state_demo.GetActionIndex(readout_demo)] = 1
                 s_demo, _, terminal_demo = game_state_demo.step_in_mind(a_demo)
 
+def eval(s, readout, sess, showEnvironment=False):
+
+    game_state_demo = GameState_InverseStep(draw=showEnvironment)
+    rand = np.random.RandomState()
+
+    s_demo,_,_ = game_state_demo.InitializeGame(PLAYER_RED, random=rand)
+    terminal_demo = False
+
+    # saving and loading networks
+    saver = tf.train.Saver()
+    sess.run(tf.initialize_all_variables())
+    checkpoint = tf.train.get_checkpoint_state(RECORD_PATH)
+    if checkpoint and checkpoint.model_checkpoint_path:
+        saver.restore(sess, checkpoint.model_checkpoint_path)
+        # 保留下面这一句，在其它程序中将会很有用的呢
+        t = int(checkpoint.model_checkpoint_path.split('/')[-1].split('-')[-1])
+        # with open(os.path.join(RECORD_PATH + 'D_.data'), 'rb') as fle1:
+        #     D_ = pickle.load(fle1)
+        print("Successfully loaded:", checkpoint.model_checkpoint_path)
+    else:
+        print("Could not find old network weights")
+
+    win_red_count=0
+    game_count=0
+    while "Einstein" != "2048":
+
+        # 按照 epsilon greedily 法选择一个行为
+        '''
+        例：
+        action_input_available = [1  0  1  1  0  0]  
+        all_available = [0  2  3]
+        readout_t = [-0.1  0.1  -0.2  -0.25  0.05  0.1]
+        '''
+
+        # 演示
+        if terminal_demo:
+            winner = (1 if game_state_demo.player==PLAYER_RED else 0)
+            win_red_count+=winner
+            game_count+=1
+            print("红方（先手）胜 %d 局，蓝方胜 %d 局。红方胜率 %.1f%%" % (win_red_count, game_count-win_red_count, win_red_count/game_count*100))
+            s_demo,_,_ = game_state_demo.InitializeGame(random.randint(0, 1) * 2 - 1, rand)
+            terminal_demo = False
+        else:
+            a_demo = np.zeros([ACTIONS])
+            if game_state_demo.player == PLAYER_BLUE:
+                a_demo[game_state_demo.GetRandomActionIndex()] = 1
+            else:
+                readout_demo = readout.eval(feed_dict={s:[s_demo]})[0]
+                a_demo[game_state_demo.GetActionIndex(readout_demo)] = 1
+            s_demo, _, terminal_demo = game_state_demo.step_in_mind(a_demo)
+
+        # 如果要演示那么就要等1秒钟
+        if showEnvironment:
+            time.sleep(1.0)
+
 
 if __name__ == '__main__':
     sess = tf.InteractiveSession()
     s, readout = createNetwork()
-    trainNetwork(s, readout, sess)
+    eval(s, readout, sess, showEnvironment=False)

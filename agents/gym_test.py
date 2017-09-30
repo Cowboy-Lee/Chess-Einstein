@@ -1,11 +1,11 @@
 import gym
 import time
-# from PureNumber.Einstein_GymEnv import *
+from PureNumber.Einstein_GymEnv import *
 
 # print(gym.envs.registry.all())
 # env = gym.make('Go19x19-v0')
-# env = EinsteinEnv(draw=True)
-env = gym.make('HalfCheetah-v1')
+env = EinsteinEnv(draw=True)
+# env = gym.make('HalfCheetah-v1')
 env.reset()
 for _i in range(1000):
     env.render()

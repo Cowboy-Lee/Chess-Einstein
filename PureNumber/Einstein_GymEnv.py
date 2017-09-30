@@ -40,7 +40,7 @@ class EinsteinEnv(gym.Env):
         a_t[action_index] = 1
         s_t1, r_t, terminal = self.game.step_in_mind(a_t)
         if terminal:
-            ''' 要记得 s_t 里的最后两层应该包含下一次骰子值和下一次的玩家信息 '''
+            ''' 要记得 s_t 里的最后一层应该包含下一次骰子值的信息 '''
             s_t = self._reset();
         else:
             s_t = s_t1
